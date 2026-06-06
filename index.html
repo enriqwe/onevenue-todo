@@ -78,6 +78,8 @@
       gap: 7px;
       font-weight: 750;
       box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+      line-height: 1.15;
+      text-align: center;
     }
 
     .button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
@@ -107,7 +109,10 @@
     .search:focus,
     .composer input:focus,
     .composer textarea:focus,
-    .composer select:focus {
+    .composer select:focus,
+    .task-dialog input:focus,
+    .task-dialog textarea:focus,
+    .task-dialog select:focus {
       border-color: #8bb8ff;
       box-shadow: 0 0 0 4px rgba(23,105,224,.12);
     }
@@ -256,6 +261,14 @@
       white-space: pre-wrap;
     }
 
+    .task-summary {
+      margin: 7px 0 0;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
     .meta {
       display: flex;
       flex-wrap: wrap;
@@ -294,6 +307,120 @@
 
     .file-input { display: none; }
 
+    .dialog-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .42);
+      z-index: 20;
+    }
+
+    .dialog-backdrop.open { display: flex; }
+
+    .task-dialog {
+      width: min(760px, 100%);
+      max-height: min(860px, calc(100vh - 36px));
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 28px 90px rgba(15, 23, 42, .28);
+    }
+
+    .dialog-head,
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-actions {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .dialog-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .dialog-body {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .task-dialog input,
+    .task-dialog textarea,
+    .task-dialog select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 8px;
+      min-height: 42px;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .dialog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .detail-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .detail-preview {
+      min-height: 92px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 11px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .detail-editor {
+      min-height: 190px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .voice-active {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: var(--red);
+    }
+
     @media (max-width: 980px) {
       header, .toolbar { grid-template-columns: 1fr; align-items: stretch; }
       .header-actions, .toolbar-actions { justify-content: flex-start; }
@@ -304,10 +431,12 @@
     }
 
     @media (max-width: 640px) {
-      .app { width: min(100% - 20px, 1180px); padding-top: 14px; }
+      body { overflow-x: hidden; }
+      .app { width: calc(100vw - 20px); padding-top: 14px; }
       .stats, .board, .composer-grid { grid-template-columns: 1fr; }
-      .toolbar-actions .button { flex: 1 1 calc(50% - 8px); }
-      .header-actions .button { flex: 1 1 auto; }
+      .dialog-grid { grid-template-columns: 1fr; }
+      .header-actions, .toolbar-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .header-actions .button, .toolbar-actions .button { min-width: 0; padding-left: 8px; padding-right: 8px; }
       .column { min-height: 240px; }
     }
   </style>
@@ -364,6 +493,60 @@
     <section class="board" id="board" aria-label="Tablero de tareas"></section>
   </main>
 
+  <div class="dialog-backdrop" id="taskDialog" role="dialog" aria-modal="true" aria-labelledby="dialogTaskTitle">
+    <section class="task-dialog">
+      <div class="dialog-head">
+        <h2 class="dialog-title" id="dialogTaskTitle">Detalle de tarea</h2>
+        <button class="button icon-button" id="closeDialogBtn" type="button" title="Cerrar">×</button>
+      </div>
+      <div class="dialog-body">
+        <div class="field">
+          <label for="dialogTitle">Tarea</label>
+          <textarea id="dialogTitle" rows="2"></textarea>
+        </div>
+        <div class="dialog-grid">
+          <div class="field">
+            <label for="dialogPriority">Prioridad</label>
+            <select id="dialogPriority">
+              <option value="alta">Alta</option>
+              <option value="media">Media</option>
+              <option value="baja">Baja</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="dialogStatus">Estado</label>
+            <select id="dialogStatus">
+              <option value="ahora">Ahora</option>
+              <option value="siguiente">Siguiente</option>
+              <option value="espera">En espera</option>
+              <option value="hecho">Hecho</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="dialogNote">Resumen manual</label>
+          <input id="dialogNote" type="text">
+        </div>
+        <div class="field">
+          <div class="detail-toolbar">
+            <label for="dialogDetail">Detalle completo</label>
+            <div class="toolbar-actions">
+              <button class="button" id="togglePreviewBtn" type="button">Ver detalle</button>
+              <button class="button" id="voiceBtn" type="button" title="Dictar detalle">Dictar</button>
+            </div>
+          </div>
+          <div class="detail-preview" id="detailPreview"></div>
+          <textarea class="detail-editor" id="dialogDetail"></textarea>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="button danger" id="deleteDialogBtn" type="button">Eliminar</button>
+        <button class="button" id="cancelDialogBtn" type="button">Cancelar</button>
+        <button class="button primary" id="saveDialogBtn" type="button">Guardar</button>
+      </div>
+    </section>
+  </div>
+
   <script>
     const STORAGE_KEY = "onevenue.todo.v1";
     const API_URL = "/api/onevenue-todo/tasks";
@@ -380,6 +563,11 @@
     let filter = "all";
     let query = "";
     let apiAvailable = false;
+    let activeTaskId = null;
+    let detailMode = "summary";
+    let recognition = null;
+    let recognizing = false;
+    let voiceBaseDetail = "";
 
     const board = document.querySelector("#board");
     const form = document.querySelector("#taskForm");
@@ -388,6 +576,15 @@
     const noteInput = document.querySelector("#note");
     const priorityInput = document.querySelector("#priority");
     const statusInput = document.querySelector("#status");
+    const taskDialog = document.querySelector("#taskDialog");
+    const dialogTitle = document.querySelector("#dialogTitle");
+    const dialogPriority = document.querySelector("#dialogPriority");
+    const dialogStatus = document.querySelector("#dialogStatus");
+    const dialogNote = document.querySelector("#dialogNote");
+    const dialogDetail = document.querySelector("#dialogDetail");
+    const detailPreview = document.querySelector("#detailPreview");
+    const togglePreviewBtn = document.querySelector("#togglePreviewBtn");
+    const voiceBtn = document.querySelector("#voiceBtn");
 
     function loadTasks() {
       try {
@@ -437,7 +634,7 @@
           if (filter === "open" && task.status === "hecho") return false;
           if (filter === "done" && task.status !== "hecho") return false;
           if (!query) return true;
-          return `${task.title} ${task.note || ""}`.toLowerCase().includes(query);
+          return `${task.title} ${task.note || ""} ${task.detail || ""}`.toLowerCase().includes(query);
         })
         .sort((a, b) => a.rank - b.rank);
     }
@@ -462,6 +659,7 @@
 
     function taskTemplate(task) {
       const done = task.status === "hecho";
+      const summary = task.note ? "" : taskSummary(task);
       return `
         <article class="task ${done ? "done" : ""}" data-id="${task.id}" data-priority="${task.priority}">
           <div class="task-main">
@@ -469,9 +667,11 @@
             <div>
               <p class="task-title">${escapeHtml(task.title)}</p>
               ${task.note ? `<p class="task-note">${escapeHtml(task.note)}</p>` : ""}
+              ${summary ? `<p class="task-summary">${escapeHtml(summary)}</p>` : ""}
               <div class="meta">
                 <span class="pill">${priorityLabels[task.priority] || "Media"}</span>
                 <span class="pill">${stateLabels[task.status] || "Ahora"}</span>
+                ${task.detail ? `<span class="pill">Detalle</span>` : ""}
               </div>
             </div>
           </div>
@@ -481,6 +681,7 @@
               <button class="button icon-button" type="button" data-action="down" title="Bajar">↓</button>
             </div>
             <div>
+              <button class="button" type="button" data-action="open">Abrir</button>
               <button class="button" type="button" data-action="move">Mover</button>
               <button class="button" type="button" data-action="edit">Editar</button>
               <button class="button danger icon-button" type="button" data-action="delete" title="Eliminar">×</button>
@@ -488,6 +689,13 @@
           </div>
         </article>
       `;
+    }
+
+    function taskSummary(task) {
+      const text = String(task.note || task.detail || "").replace(/\s+/g, " ").trim();
+      if (!text) return "";
+      if (text.length <= 120) return text;
+      return `${text.slice(0, 117).trim()}...`;
     }
 
     function renderStats() {
@@ -523,6 +731,7 @@
         id: id(),
         title,
         note: noteInput.value.trim(),
+        detail: "",
         priority: priorityInput.value,
         status,
         rank: nextRank(status),
@@ -566,6 +775,122 @@
       task.note = note === null ? task.note : note.trim();
     }
 
+    function openTask(task) {
+      activeTaskId = task.id;
+      detailMode = "summary";
+      dialogTitle.value = task.title || "";
+      dialogPriority.value = task.priority || "media";
+      dialogStatus.value = task.status || "ahora";
+      dialogNote.value = task.note || "";
+      dialogDetail.value = task.detail || "";
+      taskDialog.classList.add("open");
+      document.body.style.overflow = "hidden";
+      updateDetailPreview();
+      dialogTitle.focus();
+    }
+
+    function closeTaskDialog() {
+      stopVoice();
+      activeTaskId = null;
+      taskDialog.classList.remove("open");
+      document.body.style.overflow = "";
+    }
+
+    function activeTask() {
+      return activeTaskId ? getTask(activeTaskId) : null;
+    }
+
+    function updateDetailPreview() {
+      const syntheticTask = {
+        note: dialogNote.value,
+        detail: dialogDetail.value
+      };
+      if (detailMode === "summary") {
+        detailPreview.hidden = false;
+        dialogDetail.hidden = true;
+        togglePreviewBtn.textContent = "Ver detalle";
+        detailPreview.textContent = taskSummary(syntheticTask) || "Sin resumen";
+        return;
+      }
+      detailPreview.hidden = true;
+      dialogDetail.hidden = false;
+      togglePreviewBtn.textContent = "Ver resumen";
+    }
+
+    function saveDialogTask() {
+      const task = activeTask();
+      if (!task) return;
+      const title = dialogTitle.value.trim();
+      if (!title) {
+        alert("La tarea necesita titulo.");
+        return;
+      }
+      const previousStatus = task.status;
+      task.title = title;
+      task.priority = ["alta", "media", "baja"].includes(dialogPriority.value) ? dialogPriority.value : "media";
+      task.status = columns.some((column) => column.id === dialogStatus.value) ? dialogStatus.value : "ahora";
+      task.note = dialogNote.value.trim();
+      task.detail = dialogDetail.value.trim();
+      if (task.status !== previousStatus) task.rank = nextRank(task.status);
+      saveTasks();
+      closeTaskDialog();
+      render();
+    }
+
+    function deleteDialogTask() {
+      const task = activeTask();
+      if (!task || !confirm("Eliminar esta tarea?")) return;
+      tasks = tasks.filter((item) => item.id !== task.id);
+      saveTasks();
+      closeTaskDialog();
+      render();
+    }
+
+    function startVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("El dictado no esta disponible en este navegador.");
+        return;
+      }
+      recognition = new SpeechRecognition();
+      recognition.lang = "es-ES";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      let finalTranscript = "";
+      voiceBaseDetail = dialogDetail.value.trim();
+      recognizing = true;
+      voiceBtn.classList.add("voice-active");
+      voiceBtn.textContent = "Parar";
+      detailMode = "detail";
+      updateDetailPreview();
+      recognition.onresult = (event) => {
+        let interim = "";
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const transcript = event.results[index][0].transcript;
+          if (event.results[index].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interim += transcript;
+          }
+        }
+        const dictated = `${finalTranscript} ${interim}`.trim();
+        dialogDetail.value = [voiceBaseDetail, dictated].filter(Boolean).join(voiceBaseDetail && dictated ? "\n" : "");
+      };
+      recognition.onend = () => {
+        recognizing = false;
+        voiceBtn.classList.remove("voice-active");
+        voiceBtn.textContent = "Dictar";
+      };
+      recognition.start();
+    }
+
+    function stopVoice() {
+      if (recognition && recognizing) recognition.stop();
+      recognizing = false;
+      voiceBtn.classList.remove("voice-active");
+      voiceBtn.textContent = "Dictar";
+    }
+
     board.addEventListener("click", (event) => {
       const button = event.target.closest("button");
       if (!button) return;
@@ -577,6 +902,10 @@
         tasks = tasks.filter((item) => item.id !== task.id);
       }
       if (action === "edit") editTask(task);
+      if (action === "open") {
+        openTask(task);
+        return;
+      }
       if (action === "move") moveTask(task, 1);
       if (action === "up") reorderTask(task, -1);
       if (action === "down") reorderTask(task, 1);
@@ -639,6 +968,7 @@
         id: task.id || id(),
         title: String(task.title || "").trim() || "Tarea sin titulo",
         note: String(task.note || "").trim(),
+        detail: String(task.detail || "").trim(),
         priority: ["alta", "media", "baja"].includes(task.priority) ? task.priority : "media",
         status: columns.some((column) => column.id === task.status) ? task.status : "ahora",
         rank: Number.isFinite(task.rank) ? task.rank : (index + 1) * 100,
@@ -647,6 +977,30 @@
       saveTasks();
       render();
       event.target.value = "";
+    });
+
+    document.querySelector("#closeDialogBtn").addEventListener("click", closeTaskDialog);
+    document.querySelector("#cancelDialogBtn").addEventListener("click", closeTaskDialog);
+    document.querySelector("#saveDialogBtn").addEventListener("click", saveDialogTask);
+    document.querySelector("#deleteDialogBtn").addEventListener("click", deleteDialogTask);
+    togglePreviewBtn.addEventListener("click", () => {
+      detailMode = detailMode === "summary" ? "detail" : "summary";
+      updateDetailPreview();
+    });
+    voiceBtn.addEventListener("click", () => {
+      if (recognizing) {
+        stopVoice();
+      } else {
+        startVoice();
+      }
+    });
+    dialogNote.addEventListener("input", updateDetailPreview);
+    dialogDetail.addEventListener("input", updateDetailPreview);
+    taskDialog.addEventListener("click", (event) => {
+      if (event.target === taskDialog) closeTaskDialog();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && taskDialog.classList.contains("open")) closeTaskDialog();
     });
 
     render();

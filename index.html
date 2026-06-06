@@ -366,6 +366,7 @@
 
   <script>
     const STORAGE_KEY = "onevenue.todo.v1";
+    const API_URL = "/api/onevenue-todo/tasks";
     const columns = [
       { id: "ahora", title: "Ahora" },
       { id: "siguiente", title: "Siguiente" },
@@ -378,6 +379,7 @@
     let tasks = loadTasks();
     let filter = "all";
     let query = "";
+    let apiAvailable = false;
 
     const board = document.querySelector("#board");
     const form = document.querySelector("#taskForm");
@@ -398,6 +400,30 @@
 
     function saveTasks() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      if (apiAvailable) {
+        fetch(API_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tasks })
+        }).catch(() => {
+          apiAvailable = false;
+        });
+      }
+    }
+
+    async function syncFromServer() {
+      try {
+        const response = await fetch(API_URL, { headers: { "Accept": "application/json" } });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!Array.isArray(data.tasks)) return;
+        apiAvailable = true;
+        tasks = data.tasks;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        render();
+      } catch {
+        apiAvailable = false;
+      }
     }
 
     function id() {
@@ -624,6 +650,7 @@
     });
 
     render();
+    syncFromServer();
   </script>
 </body>
 </html>

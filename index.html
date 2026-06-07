@@ -457,7 +457,7 @@
     </header>
 
     <section class="toolbar" aria-label="Filtros">
-      <input class="search" id="search" type="search" placeholder="Buscar tareas">
+      <input class="search" id="search" type="search" placeholder="Buscar: keyword, tag:KPIs, priority:media, status:ahora">
       <div class="toolbar-actions">
         <button class="button" type="button" data-filter="all">Todas</button>
         <button class="button" type="button" data-filter="open">Abiertas</button>
@@ -639,13 +639,13 @@
     }
 
     function filteredTasks(status) {
+      const searchSpec = parseSearch(query);
       return tasks
         .filter((task) => task.status === status)
         .filter((task) => {
           if (filter === "open" && task.status === "hecho") return false;
           if (filter === "done" && task.status !== "hecho") return false;
-          if (!query) return true;
-          return `${task.title} ${task.note || ""} ${task.detail || ""} ${tagsText(task.tags)}`.toLowerCase().includes(query);
+          return matchesSearch(task, searchSpec);
         })
         .sort((a, b) => a.rank - b.rank);
     }
@@ -745,6 +745,41 @@
 
     function tagsText(value) {
       return normalizeTags(value).join(" ");
+    }
+
+    function parseSearch(value) {
+      const spec = { terms: [], tags: [], priority: "", status: "" };
+      String(value || "").split(/\s+/).filter(Boolean).forEach((part) => {
+        const separator = part.indexOf(":");
+        const key = separator > 0 ? part.slice(0, separator).toLowerCase() : "";
+        const raw = separator > 0 ? part.slice(separator + 1).trim() : part;
+        const text = raw.toLowerCase();
+        if (!text) return;
+        if (["tag", "tags", "#"].includes(key)) {
+          spec.tags.push(text);
+          return;
+        }
+        if (["priority", "prioridad", "importancia"].includes(key)) {
+          spec.priority = text;
+          return;
+        }
+        if (["status", "estado"].includes(key)) {
+          spec.status = text;
+          return;
+        }
+        spec.terms.push(part.toLowerCase());
+      });
+      return spec;
+    }
+
+    function matchesSearch(task, spec) {
+      if (!spec.terms.length && !spec.tags.length && !spec.priority && !spec.status) return true;
+      if (spec.priority && task.priority !== spec.priority) return false;
+      if (spec.status && task.status !== spec.status) return false;
+      const taskTags = normalizeTags(task.tags).map((tag) => tag.toLowerCase());
+      if (spec.tags.some((tag) => !taskTags.includes(tag))) return false;
+      const text = `${task.title} ${task.note || ""} ${task.detail || ""} ${tagsText(task.tags)} ${task.priority || ""} ${task.status || ""}`.toLowerCase();
+      return spec.terms.every((term) => text.includes(term));
     }
 
     function nextRank(status) {

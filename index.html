@@ -225,7 +225,8 @@
       box-shadow: 0 4px 18px rgba(24,36,58,.06);
     }
 
-    .task[data-priority="alta"] { border-left-color: var(--red); }
+    .task[data-priority="critica"] { border-left-color: var(--red); }
+    .task[data-priority="alta"] { border-left-color: #f97316; }
     .task[data-priority="media"] { border-left-color: var(--amber); }
     .task[data-priority="baja"] { border-left-color: var(--green); }
     .task.done { opacity: .7; }
@@ -468,14 +469,15 @@
     <section class="stats" aria-label="Resumen">
       <div class="stat"><span>Total</span><strong id="statTotal">0</strong></div>
       <div class="stat"><span>Abiertas</span><strong id="statOpen">0</strong></div>
-      <div class="stat"><span>Alta prioridad</span><strong id="statHigh">0</strong></div>
+      <div class="stat"><span>Importantes</span><strong id="statHigh">0</strong></div>
       <div class="stat"><span>Completadas</span><strong id="statDone">0</strong></div>
     </section>
 
     <form class="composer" id="taskForm">
       <div class="composer-grid">
         <textarea class="wide" id="title" placeholder="Nueva tarea" required></textarea>
-        <select id="priority" aria-label="Prioridad">
+        <select id="priority" aria-label="Importancia">
+          <option value="critica">Critica</option>
           <option value="alta">Alta</option>
           <option value="media" selected>Media</option>
           <option value="baja">Baja</option>
@@ -487,6 +489,7 @@
         </select>
         <button class="button primary" type="submit">Añadir</button>
         <input class="wide" id="note" type="text" placeholder="Nota, dueño o fecha limite">
+        <input class="wide" id="tags" type="text" placeholder="Tags separados por coma">
       </div>
     </form>
 
@@ -506,8 +509,9 @@
         </div>
         <div class="dialog-grid">
           <div class="field">
-            <label for="dialogPriority">Prioridad</label>
+            <label for="dialogPriority">Importancia</label>
             <select id="dialogPriority">
+              <option value="critica">Critica</option>
               <option value="alta">Alta</option>
               <option value="media">Media</option>
               <option value="baja">Baja</option>
@@ -526,6 +530,10 @@
         <div class="field">
           <label for="dialogNote">Resumen manual</label>
           <input id="dialogNote" type="text">
+        </div>
+        <div class="field">
+          <label for="dialogTags">Tags</label>
+          <input id="dialogTags" type="text" placeholder="KPIs, ventas, producto">
         </div>
         <div class="field">
           <div class="detail-toolbar">
@@ -556,7 +564,8 @@
       { id: "espera", title: "En espera" },
       { id: "hecho", title: "Hecho" }
     ];
-    const priorityLabels = { alta: "Alta", media: "Media", baja: "Baja" };
+    const priorityLabels = { critica: "Critica", alta: "Alta", media: "Media", baja: "Baja" };
+    const validPriorities = Object.keys(priorityLabels);
     const stateLabels = Object.fromEntries(columns.map((column) => [column.id, column.title]));
 
     let tasks = loadTasks();
@@ -574,6 +583,7 @@
     const search = document.querySelector("#search");
     const titleInput = document.querySelector("#title");
     const noteInput = document.querySelector("#note");
+    const tagsInput = document.querySelector("#tags");
     const priorityInput = document.querySelector("#priority");
     const statusInput = document.querySelector("#status");
     const taskDialog = document.querySelector("#taskDialog");
@@ -581,6 +591,7 @@
     const dialogPriority = document.querySelector("#dialogPriority");
     const dialogStatus = document.querySelector("#dialogStatus");
     const dialogNote = document.querySelector("#dialogNote");
+    const dialogTags = document.querySelector("#dialogTags");
     const dialogDetail = document.querySelector("#dialogDetail");
     const detailPreview = document.querySelector("#detailPreview");
     const togglePreviewBtn = document.querySelector("#togglePreviewBtn");
@@ -634,7 +645,7 @@
           if (filter === "open" && task.status === "hecho") return false;
           if (filter === "done" && task.status !== "hecho") return false;
           if (!query) return true;
-          return `${task.title} ${task.note || ""} ${task.detail || ""}`.toLowerCase().includes(query);
+          return `${task.title} ${task.note || ""} ${task.detail || ""} ${tagsText(task.tags)}`.toLowerCase().includes(query);
         })
         .sort((a, b) => a.rank - b.rank);
     }
@@ -671,6 +682,7 @@
               <div class="meta">
                 <span class="pill">${priorityLabels[task.priority] || "Media"}</span>
                 <span class="pill">${stateLabels[task.status] || "Ahora"}</span>
+                ${normalizeTags(task.tags).map((tag) => `<span class="pill">#${escapeHtml(tag)}</span>`).join("")}
                 ${task.detail ? `<span class="pill">Detalle</span>` : ""}
               </div>
             </div>
@@ -703,7 +715,7 @@
       const done = tasks.filter((task) => task.status === "hecho").length;
       document.querySelector("#statTotal").textContent = total;
       document.querySelector("#statOpen").textContent = total - done;
-      document.querySelector("#statHigh").textContent = tasks.filter((task) => task.priority === "alta" && task.status !== "hecho").length;
+      document.querySelector("#statHigh").textContent = tasks.filter((task) => ["critica", "alta"].includes(task.priority) && task.status !== "hecho").length;
       document.querySelector("#statDone").textContent = done;
     }
 
@@ -715,6 +727,24 @@
         "\"": "&quot;",
         "'": "&#039;"
       }[char]));
+    }
+
+    function normalizeTags(value) {
+      const source = Array.isArray(value) ? value : String(value || "").split(",");
+      const seen = new Set();
+      return source
+        .map((tag) => String(tag || "").trim())
+        .filter((tag) => {
+          const key = tag.toLowerCase();
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 12);
+    }
+
+    function tagsText(value) {
+      return normalizeTags(value).join(" ");
     }
 
     function nextRank(status) {
@@ -732,7 +762,8 @@
         title,
         note: noteInput.value.trim(),
         detail: "",
-        priority: priorityInput.value,
+        tags: normalizeTags(tagsInput.value),
+        priority: validPriorities.includes(priorityInput.value) ? priorityInput.value : "media",
         status,
         rank: nextRank(status),
         createdAt: new Date().toISOString()
@@ -782,6 +813,7 @@
       dialogPriority.value = task.priority || "media";
       dialogStatus.value = task.status || "ahora";
       dialogNote.value = task.note || "";
+      dialogTags.value = tagsText(task.tags);
       dialogDetail.value = task.detail || "";
       taskDialog.classList.add("open");
       document.body.style.overflow = "hidden";
@@ -827,9 +859,10 @@
       }
       const previousStatus = task.status;
       task.title = title;
-      task.priority = ["alta", "media", "baja"].includes(dialogPriority.value) ? dialogPriority.value : "media";
+      task.priority = validPriorities.includes(dialogPriority.value) ? dialogPriority.value : "media";
       task.status = columns.some((column) => column.id === dialogStatus.value) ? dialogStatus.value : "ahora";
       task.note = dialogNote.value.trim();
+      task.tags = normalizeTags(dialogTags.value);
       task.detail = dialogDetail.value.trim();
       if (task.status !== previousStatus) task.rank = nextRank(task.status);
       saveTasks();
@@ -969,7 +1002,8 @@
         title: String(task.title || "").trim() || "Tarea sin titulo",
         note: String(task.note || "").trim(),
         detail: String(task.detail || "").trim(),
-        priority: ["alta", "media", "baja"].includes(task.priority) ? task.priority : "media",
+        tags: normalizeTags(task.tags),
+        priority: validPriorities.includes(task.priority) ? task.priority : "media",
         status: columns.some((column) => column.id === task.status) ? task.status : "ahora",
         rank: Number.isFinite(task.rank) ? task.rank : (index + 1) * 100,
         createdAt: task.createdAt || new Date().toISOString()

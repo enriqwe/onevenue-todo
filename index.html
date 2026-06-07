@@ -3,21 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OneVenue To-Do</title>
+  <title>Notas</title>
   <style>
     :root {
-      color-scheme: light;
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --panel-2: #eef3f8;
-      --ink: #172033;
-      --muted: #637083;
-      --line: #d9e1eb;
-      --blue: #1769e0;
-      --green: #15803d;
-      --amber: #b45309;
-      --red: #b42318;
-      --shadow: 0 18px 50px rgba(24, 36, 58, .12);
+      color-scheme: dark;
+      --bg: #090d14;
+      --panel: #111827;
+      --panel-2: #0d1420;
+      --panel-3: #172033;
+      --ink: #e5e7eb;
+      --muted: #94a3b8;
+      --line: #263244;
+      --blue: #60a5fa;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --red: #fb7185;
+      --shadow: 0 22px 70px rgba(0, 0, 0, .42);
     }
 
     * { box-sizing: border-box; }
@@ -35,26 +36,25 @@
     .app {
       width: min(1180px, calc(100vw - 32px));
       margin: 0 auto;
-      padding: 24px 0 40px;
+      padding: 16px 0 34px;
     }
 
     header {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 20px;
-      align-items: end;
-      padding: 8px 0 18px;
-      border-bottom: 1px solid var(--line);
+      gap: 12px;
+      align-items: center;
+      padding: 4px 0 10px;
     }
 
     h1 {
-      margin: 0 0 6px;
-      font-size: clamp(28px, 4vw, 48px);
+      margin: 0;
+      font-size: clamp(24px, 3vw, 34px);
       line-height: 1;
       letter-spacing: 0;
     }
 
-    .subtitle { margin: 0; color: var(--muted); font-size: 15px; }
+    .subtitle { display: none; }
 
     .header-actions,
     .toolbar-actions,
@@ -69,39 +69,39 @@
       border: 1px solid var(--line);
       background: var(--panel);
       color: var(--ink);
-      min-height: 40px;
-      padding: 9px 12px;
+      min-height: 36px;
+      padding: 8px 11px;
       border-radius: 8px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 7px;
       font-weight: 750;
-      box-shadow: 0 1px 0 rgba(255,255,255,.8) inset;
+      box-shadow: 0 1px 0 rgba(255,255,255,.05) inset;
       line-height: 1.15;
       text-align: center;
     }
 
-    .button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .button.primary { background: var(--blue); color: #07111f; border-color: var(--blue); }
     .button.danger { color: var(--red); }
-    .icon-button { width: 38px; padding: 0; }
+    .icon-button { width: 34px; padding: 0; }
     .button:disabled { opacity: .42; cursor: not-allowed; }
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) auto;
-      gap: 12px;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 8px;
       align-items: center;
-      margin: 18px 0;
+      margin: 8px 0 12px;
     }
 
     .search {
       width: 100%;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel);
       border-radius: 8px;
-      min-height: 42px;
-      padding: 10px 12px;
+      min-height: 36px;
+      padding: 8px 10px;
       color: var(--ink);
       outline: none;
     }
@@ -117,31 +117,8 @@
       box-shadow: 0 0 0 4px rgba(23,105,224,.12);
     }
 
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .stat {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      min-height: 78px;
-    }
-
-    .stat span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; }
-    .stat strong { display: block; margin-top: 8px; font-size: 28px; line-height: 1; }
-
     .composer {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-      margin-bottom: 18px;
+      margin: 0;
     }
 
     .composer-grid {
@@ -156,7 +133,7 @@
     .composer select {
       width: 100%;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel-2);
       color: var(--ink);
       border-radius: 8px;
       min-height: 42px;
@@ -172,7 +149,7 @@
 
     .board {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 12px;
       align-items: start;
     }
@@ -181,7 +158,7 @@
       background: var(--panel-2);
       border: 1px solid var(--line);
       border-radius: 8px;
-      min-height: 360px;
+      min-height: 240px;
       padding: 10px;
     }
 
@@ -207,7 +184,7 @@
       align-items: center;
       justify-content: center;
       border-radius: 999px;
-      background: #fff;
+      background: var(--panel);
       border: 1px solid var(--line);
       color: var(--muted);
       font-size: 12px;
@@ -217,13 +194,16 @@
     .task-list { display: grid; gap: 9px; min-height: 240px; }
 
     .task {
-      background: #fff;
+      background: var(--panel);
       border: 1px solid var(--line);
       border-left: 5px solid var(--blue);
       border-radius: 8px;
-      padding: 11px;
-      box-shadow: 0 4px 18px rgba(24,36,58,.06);
+      padding: 11px 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.16);
+      cursor: pointer;
     }
+
+    .task:hover { border-color: #3b4a60; background: #151f2f; }
 
     .task[data-priority="critica"] { border-left-color: var(--red); }
     .task[data-priority="alta"] { border-left-color: #f97316; }
@@ -233,18 +213,25 @@
     .task.done .task-title { text-decoration: line-through; color: var(--muted); }
 
     .task-main {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 10px;
-      align-items: start;
+      position: relative;
+      padding-right: 34px;
     }
 
-    .check {
-      width: 22px;
-      height: 22px;
-      margin-top: 1px;
-      accent-color: var(--blue);
+    .delete-task {
+      position: absolute;
+      top: -3px;
+      right: -2px;
+      width: 28px;
+      min-height: 28px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      box-shadow: none;
+      font-size: 18px;
+      line-height: 1;
     }
+
+    .delete-task:hover { color: var(--red); background: #25131b; }
 
     .task-title {
       margin: 0;
@@ -264,7 +251,7 @@
 
     .task-summary {
       margin: 7px 0 0;
-      color: #334155;
+      color: #cbd5e1;
       font-size: 13px;
       line-height: 1.35;
       overflow-wrap: anywhere;
@@ -281,21 +268,14 @@
 
     .pill {
       border: 1px solid var(--line);
-      background: #f8fafc;
+      background: var(--panel-3);
       border-radius: 999px;
       padding: 4px 7px;
       font-weight: 750;
     }
 
-    .task-actions {
-      justify-content: space-between;
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--line);
-    }
-
     .empty {
-      border: 1px dashed #c9d4e2;
+      border: 1px dashed #334155;
       border-radius: 8px;
       color: var(--muted);
       min-height: 84px;
@@ -315,7 +295,7 @@
       align-items: center;
       justify-content: center;
       padding: 18px;
-      background: rgba(15, 23, 42, .42);
+      background: rgba(0, 0, 0, .62);
       z-index: 20;
     }
 
@@ -328,7 +308,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      box-shadow: 0 28px 90px rgba(15, 23, 42, .28);
+      box-shadow: var(--shadow);
     }
 
     .dialog-head,
@@ -377,7 +357,7 @@
     .task-dialog select {
       width: 100%;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel-2);
       color: var(--ink);
       border-radius: 8px;
       min-height: 42px;
@@ -402,7 +382,7 @@
     .detail-preview {
       min-height: 92px;
       border: 1px solid var(--line);
-      background: #f8fafc;
+      background: var(--panel-2);
       border-radius: 8px;
       padding: 11px;
       line-height: 1.45;
@@ -417,8 +397,8 @@
     }
 
     .voice-active {
-      background: #fee2e2;
-      border-color: #fca5a5;
+      background: #3a1721;
+      border-color: #9f1239;
       color: var(--red);
     }
 
@@ -446,65 +426,91 @@
   <main class="app">
     <header>
       <div>
-        <h1>OneVenue To-Do</h1>
-        <p class="subtitle">Prioriza, reordena y tacha tareas de trabajo sin sacar datos del navegador.</p>
+        <h1>Notas</h1>
+        <p class="subtitle">Notas de trabajo.</p>
       </div>
       <div class="header-actions">
-        <button class="button" id="exportBtn" type="button" title="Exportar copia JSON">Exportar</button>
-        <label class="button" for="importFile" title="Importar copia JSON">Importar</label>
-        <input class="file-input" id="importFile" type="file" accept="application/json">
+        <button class="button primary" id="newNoteBtn" type="button">Nueva nota</button>
       </div>
     </header>
 
     <section class="toolbar" aria-label="Filtros">
       <input class="search" id="search" type="search" placeholder="Buscar: keyword, tag:KPIs, priority:media, status:ahora">
       <div class="toolbar-actions">
-        <button class="button" type="button" data-filter="all">Todas</button>
         <button class="button" type="button" data-filter="open">Abiertas</button>
         <button class="button" type="button" data-filter="done">Hechas</button>
+        <button class="button" type="button" data-filter="all">Todas</button>
         <button class="button danger" id="clearDoneBtn" type="button">Limpiar hechas</button>
       </div>
     </section>
 
-    <section class="stats" aria-label="Resumen">
-      <div class="stat"><span>Total</span><strong id="statTotal">0</strong></div>
-      <div class="stat"><span>Abiertas</span><strong id="statOpen">0</strong></div>
-      <div class="stat"><span>Importantes</span><strong id="statHigh">0</strong></div>
-      <div class="stat"><span>Completadas</span><strong id="statDone">0</strong></div>
-    </section>
-
-    <form class="composer" id="taskForm">
-      <div class="composer-grid">
-        <textarea class="wide" id="title" placeholder="Nueva tarea" required></textarea>
-        <select id="priority" aria-label="Importancia">
-          <option value="critica">Critica</option>
-          <option value="alta">Alta</option>
-          <option value="media" selected>Media</option>
-          <option value="baja">Baja</option>
-        </select>
-        <select id="status" aria-label="Estado">
-          <option value="ahora" selected>Ahora</option>
-          <option value="siguiente">Siguiente</option>
-          <option value="espera">En espera</option>
-        </select>
-        <button class="button primary" type="submit">Añadir</button>
-        <input class="wide" id="note" type="text" placeholder="Nota, dueño o fecha limite">
-        <input class="wide" id="tags" type="text" placeholder="Tags separados por coma">
-      </div>
-    </form>
-
-    <section class="board" id="board" aria-label="Tablero de tareas"></section>
+    <section class="board" id="board" aria-label="Notas"></section>
   </main>
+
+  <div class="dialog-backdrop" id="newNoteDialog" role="dialog" aria-modal="true" aria-labelledby="newNoteTitle">
+    <section class="task-dialog">
+      <div class="dialog-head">
+        <h2 class="dialog-title" id="newNoteTitle">Nueva nota</h2>
+        <button class="button icon-button" id="closeNewNoteBtn" type="button" title="Cerrar">×</button>
+      </div>
+      <form class="composer" id="taskForm">
+        <div class="dialog-body">
+          <div class="field">
+            <label for="title">Título</label>
+            <textarea id="title" rows="2" required></textarea>
+          </div>
+          <div class="dialog-grid">
+            <div class="field">
+              <label for="priority">Importancia</label>
+              <select id="priority" aria-label="Importancia">
+                <option value="critica">Critica</option>
+                <option value="alta">Alta</option>
+                <option value="media" selected>Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="status">Estado</label>
+              <select id="status" aria-label="Estado">
+                <option value="ahora" selected>Ahora</option>
+                <option value="siguiente">Siguiente</option>
+                <option value="espera">En espera</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="note">Resumen</label>
+            <input id="note" type="text">
+          </div>
+          <div class="field">
+            <label for="tags">Tags</label>
+            <input id="tags" type="text" placeholder="KPIs, alertas, ETL">
+          </div>
+          <div class="field">
+            <div class="detail-toolbar">
+              <label for="newDetail">Descripción</label>
+              <button class="button" id="newVoiceBtn" type="button" title="Dictar descripción">Dictar</button>
+            </div>
+            <textarea class="detail-editor" id="newDetail"></textarea>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="button" id="cancelNewNoteBtn" type="button">Cancelar</button>
+          <button class="button primary" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
 
   <div class="dialog-backdrop" id="taskDialog" role="dialog" aria-modal="true" aria-labelledby="dialogTaskTitle">
     <section class="task-dialog">
       <div class="dialog-head">
-        <h2 class="dialog-title" id="dialogTaskTitle">Detalle de tarea</h2>
+        <h2 class="dialog-title" id="dialogTaskTitle">Detalle de nota</h2>
         <button class="button icon-button" id="closeDialogBtn" type="button" title="Cerrar">×</button>
       </div>
       <div class="dialog-body">
         <div class="field">
-          <label for="dialogTitle">Tarea</label>
+          <label for="dialogTitle">Nota</label>
           <textarea id="dialogTitle" rows="2"></textarea>
         </div>
         <div class="dialog-grid">
@@ -569,10 +575,11 @@
     const stateLabels = Object.fromEntries(columns.map((column) => [column.id, column.title]));
 
     let tasks = loadTasks();
-    let filter = "all";
+    let filter = "open";
     let query = "";
     let apiAvailable = false;
     let activeTaskId = null;
+    let activeDialog = "";
     let detailMode = "summary";
     let recognition = null;
     let recognizing = false;
@@ -580,10 +587,14 @@
 
     const board = document.querySelector("#board");
     const form = document.querySelector("#taskForm");
+    const newNoteDialog = document.querySelector("#newNoteDialog");
+    const newNoteBtn = document.querySelector("#newNoteBtn");
     const search = document.querySelector("#search");
     const titleInput = document.querySelector("#title");
     const noteInput = document.querySelector("#note");
     const tagsInput = document.querySelector("#tags");
+    const newDetailInput = document.querySelector("#newDetail");
+    const newVoiceBtn = document.querySelector("#newVoiceBtn");
     const priorityInput = document.querySelector("#priority");
     const statusInput = document.querySelector("#status");
     const taskDialog = document.querySelector("#taskDialog");
@@ -651,8 +662,14 @@
     }
 
     function render() {
-      renderStats();
-      board.innerHTML = columns.map((column) => {
+      const searchSpec = parseSearch(query);
+      const visibleColumns = columns.filter((column) => {
+        if (searchSpec.status) return column.id === searchSpec.status;
+        if (filter === "open") return column.id !== "hecho";
+        if (filter === "done") return column.id === "hecho";
+        return true;
+      });
+      board.innerHTML = visibleColumns.map((column) => {
         const items = filteredTasks(column.id);
         return `
           <article class="column" data-column="${column.id}">
@@ -661,7 +678,7 @@
               <span class="count">${items.length}</span>
             </div>
             <div class="task-list">
-              ${items.length ? items.map(taskTemplate).join("") : `<div class="empty">Sin tareas</div>`}
+              ${items.length ? items.map(taskTemplate).join("") : `<div class="empty">Sin notas</div>`}
             </div>
           </article>
         `;
@@ -674,7 +691,6 @@
       return `
         <article class="task ${done ? "done" : ""}" data-id="${task.id}" data-priority="${task.priority}">
           <div class="task-main">
-            <input class="check" type="checkbox" ${done ? "checked" : ""} aria-label="Marcar tarea">
             <div>
               <p class="task-title">${escapeHtml(task.title)}</p>
               ${task.note ? `<p class="task-note">${escapeHtml(task.note)}</p>` : ""}
@@ -686,18 +702,7 @@
                 ${task.detail ? `<span class="pill">Detalle</span>` : ""}
               </div>
             </div>
-          </div>
-          <div class="task-actions">
-            <div>
-              <button class="button icon-button" type="button" data-action="up" title="Subir">↑</button>
-              <button class="button icon-button" type="button" data-action="down" title="Bajar">↓</button>
-            </div>
-            <div>
-              <button class="button" type="button" data-action="open">Abrir</button>
-              <button class="button" type="button" data-action="move">Mover</button>
-              <button class="button" type="button" data-action="edit">Editar</button>
-              <button class="button danger icon-button" type="button" data-action="delete" title="Eliminar">×</button>
-            </div>
+            <button class="button danger icon-button delete-task" type="button" data-action="delete" title="Eliminar">×</button>
           </div>
         </article>
       `;
@@ -708,15 +713,6 @@
       if (!text) return "";
       if (text.length <= 120) return text;
       return `${text.slice(0, 117).trim()}...`;
-    }
-
-    function renderStats() {
-      const total = tasks.length;
-      const done = tasks.filter((task) => task.status === "hecho").length;
-      document.querySelector("#statTotal").textContent = total;
-      document.querySelector("#statOpen").textContent = total - done;
-      document.querySelector("#statHigh").textContent = tasks.filter((task) => ["critica", "alta"].includes(task.priority) && task.status !== "hecho").length;
-      document.querySelector("#statDone").textContent = done;
     }
 
     function escapeHtml(value) {
@@ -796,7 +792,7 @@
         id: id(),
         title,
         note: noteInput.value.trim(),
-        detail: "",
+        detail: newDetailInput.value.trim(),
         tags: normalizeTags(tagsInput.value),
         priority: validPriorities.includes(priorityInput.value) ? priorityInput.value : "media",
         status,
@@ -806,8 +802,8 @@
       form.reset();
       priorityInput.value = "media";
       statusInput.value = "ahora";
-      titleInput.focus();
       saveTasks();
+      closeNewNoteDialog(true);
       render();
     }
 
@@ -815,34 +811,9 @@
       return tasks.find((task) => task.id === idValue);
     }
 
-    function moveTask(task, direction) {
-      const openColumns = columns.map((column) => column.id);
-      const index = openColumns.indexOf(task.status);
-      const next = openColumns[(index + direction + openColumns.length) % openColumns.length];
-      task.status = next;
-      task.rank = nextRank(next);
-    }
-
-    function reorderTask(task, direction) {
-      const siblings = tasks.filter((item) => item.status === task.status).sort((a, b) => a.rank - b.rank);
-      const index = siblings.findIndex((item) => item.id === task.id);
-      const swap = siblings[index + direction];
-      if (!swap) return;
-      const rank = task.rank;
-      task.rank = swap.rank;
-      swap.rank = rank;
-    }
-
-    function editTask(task) {
-      const title = prompt("Tarea", task.title);
-      if (title === null || !title.trim()) return;
-      const note = prompt("Nota", task.note || "");
-      task.title = title.trim();
-      task.note = note === null ? task.note : note.trim();
-    }
-
     function openTask(task) {
       activeTaskId = task.id;
+      activeDialog = "task";
       detailMode = "summary";
       dialogTitle.value = task.title || "";
       dialogPriority.value = task.priority || "media";
@@ -852,15 +823,42 @@
       dialogDetail.value = task.detail || "";
       taskDialog.classList.add("open");
       document.body.style.overflow = "hidden";
+      history.pushState({ dialog: "task", id: task.id }, "", `#nota-${encodeURIComponent(task.id)}`);
       updateDetailPreview();
       dialogTitle.focus();
     }
 
-    function closeTaskDialog() {
+    function closeTaskDialog(fromUser = false) {
+      if (fromUser && activeDialog === "task" && history.state && history.state.dialog === "task") {
+        history.back();
+        return;
+      }
       stopVoice();
       activeTaskId = null;
+      activeDialog = "";
       taskDialog.classList.remove("open");
       document.body.style.overflow = "";
+      if (location.hash.startsWith("#nota-")) history.replaceState({}, "", location.pathname + location.search);
+    }
+
+    function openNewNoteDialog() {
+      activeDialog = "new";
+      newNoteDialog.classList.add("open");
+      document.body.style.overflow = "hidden";
+      history.pushState({ dialog: "new" }, "", "#nueva-nota");
+      titleInput.focus();
+    }
+
+    function closeNewNoteDialog(fromUser = false) {
+      if (fromUser && activeDialog === "new" && history.state && history.state.dialog === "new") {
+        history.back();
+        return;
+      }
+      stopVoice();
+      activeDialog = "";
+      newNoteDialog.classList.remove("open");
+      document.body.style.overflow = "";
+      if (location.hash === "#nueva-nota") history.replaceState({}, "", location.pathname + location.search);
     }
 
     function activeTask() {
@@ -889,7 +887,7 @@
       if (!task) return;
       const title = dialogTitle.value.trim();
       if (!title) {
-        alert("La tarea necesita titulo.");
+        alert("La nota necesita titulo.");
         return;
       }
       const previousStatus = task.status;
@@ -907,14 +905,14 @@
 
     function deleteDialogTask() {
       const task = activeTask();
-      if (!task || !confirm("Eliminar esta tarea?")) return;
+      if (!task || !confirm("Eliminar esta nota?")) return;
       tasks = tasks.filter((item) => item.id !== task.id);
       saveTasks();
       closeTaskDialog();
       render();
     }
 
-    function startVoice() {
+    function startVoice(target, button) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert("El dictado no esta disponible en este navegador.");
@@ -925,12 +923,14 @@
       recognition.continuous = true;
       recognition.interimResults = true;
       let finalTranscript = "";
-      voiceBaseDetail = dialogDetail.value.trim();
+      voiceBaseDetail = target.value.trim();
       recognizing = true;
-      voiceBtn.classList.add("voice-active");
-      voiceBtn.textContent = "Parar";
-      detailMode = "detail";
-      updateDetailPreview();
+      button.classList.add("voice-active");
+      button.textContent = "Parar";
+      if (target === dialogDetail) {
+        detailMode = "detail";
+        updateDetailPreview();
+      }
       recognition.onresult = (event) => {
         let interim = "";
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
@@ -942,12 +942,13 @@
           }
         }
         const dictated = `${finalTranscript} ${interim}`.trim();
-        dialogDetail.value = [voiceBaseDetail, dictated].filter(Boolean).join(voiceBaseDetail && dictated ? "\n" : "");
+        target.value = [voiceBaseDetail, dictated].filter(Boolean).join(voiceBaseDetail && dictated ? "\n" : "");
+        if (target === dialogDetail) updateDetailPreview();
       };
       recognition.onend = () => {
         recognizing = false;
-        voiceBtn.classList.remove("voice-active");
-        voiceBtn.textContent = "Dictar";
+        button.classList.remove("voice-active");
+        button.textContent = "Dictar";
       };
       recognition.start();
     }
@@ -957,42 +958,30 @@
       recognizing = false;
       voiceBtn.classList.remove("voice-active");
       voiceBtn.textContent = "Dictar";
+      newVoiceBtn.classList.remove("voice-active");
+      newVoiceBtn.textContent = "Dictar";
     }
 
     board.addEventListener("click", (event) => {
       const button = event.target.closest("button");
-      if (!button) return;
-      const card = button.closest(".task");
-      const task = card ? getTask(card.dataset.id) : null;
-      if (!task) return;
-      const action = button.dataset.action;
-      if (action === "delete" && confirm("Eliminar esta tarea?")) {
-        tasks = tasks.filter((item) => item.id !== task.id);
-      }
-      if (action === "edit") editTask(task);
-      if (action === "open") {
-        openTask(task);
-        return;
-      }
-      if (action === "move") moveTask(task, 1);
-      if (action === "up") reorderTask(task, -1);
-      if (action === "down") reorderTask(task, 1);
-      saveTasks();
-      render();
-    });
-
-    board.addEventListener("change", (event) => {
-      if (!event.target.matches(".check")) return;
       const card = event.target.closest(".task");
       const task = card ? getTask(card.dataset.id) : null;
       if (!task) return;
-      task.status = event.target.checked ? "hecho" : "ahora";
-      task.rank = nextRank(task.status);
-      saveTasks();
-      render();
+      if (button && button.dataset.action === "delete") {
+        event.stopPropagation();
+        if (!confirm("Eliminar esta nota?")) return;
+        tasks = tasks.filter((item) => item.id !== task.id);
+        saveTasks();
+        render();
+        return;
+      }
+      openTask(task);
     });
 
     form.addEventListener("submit", addTask);
+    newNoteBtn.addEventListener("click", openNewNoteDialog);
+    document.querySelector("#closeNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
+    document.querySelector("#cancelNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
     search.addEventListener("input", () => {
       query = search.value.trim().toLowerCase();
       render();
@@ -1007,49 +996,14 @@
 
     document.querySelector("#clearDoneBtn").addEventListener("click", () => {
       const done = tasks.filter((task) => task.status === "hecho").length;
-      if (!done || !confirm(`Eliminar ${done} tarea(s) completada(s)?`)) return;
+      if (!done || !confirm(`Eliminar ${done} nota(s) completada(s)?`)) return;
       tasks = tasks.filter((task) => task.status !== "hecho");
       saveTasks();
       render();
     });
 
-    document.querySelector("#exportBtn").addEventListener("click", () => {
-      const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), tasks }, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "onevenue-todo.json";
-      link.click();
-      URL.revokeObjectURL(url);
-    });
-
-    document.querySelector("#importFile").addEventListener("change", async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      const data = JSON.parse(await file.text());
-      const imported = Array.isArray(data) ? data : data.tasks;
-      if (!Array.isArray(imported)) {
-        alert("El archivo no contiene tareas validas.");
-        return;
-      }
-      tasks = imported.map((task, index) => ({
-        id: task.id || id(),
-        title: String(task.title || "").trim() || "Tarea sin titulo",
-        note: String(task.note || "").trim(),
-        detail: String(task.detail || "").trim(),
-        tags: normalizeTags(task.tags),
-        priority: validPriorities.includes(task.priority) ? task.priority : "media",
-        status: columns.some((column) => column.id === task.status) ? task.status : "ahora",
-        rank: Number.isFinite(task.rank) ? task.rank : (index + 1) * 100,
-        createdAt: task.createdAt || new Date().toISOString()
-      }));
-      saveTasks();
-      render();
-      event.target.value = "";
-    });
-
-    document.querySelector("#closeDialogBtn").addEventListener("click", closeTaskDialog);
-    document.querySelector("#cancelDialogBtn").addEventListener("click", closeTaskDialog);
+    document.querySelector("#closeDialogBtn").addEventListener("click", () => closeTaskDialog(true));
+    document.querySelector("#cancelDialogBtn").addEventListener("click", () => closeTaskDialog(true));
     document.querySelector("#saveDialogBtn").addEventListener("click", saveDialogTask);
     document.querySelector("#deleteDialogBtn").addEventListener("click", deleteDialogTask);
     togglePreviewBtn.addEventListener("click", () => {
@@ -1060,16 +1014,32 @@
       if (recognizing) {
         stopVoice();
       } else {
-        startVoice();
+        startVoice(dialogDetail, voiceBtn);
+      }
+    });
+    newVoiceBtn.addEventListener("click", () => {
+      if (recognizing) {
+        stopVoice();
+      } else {
+        startVoice(newDetailInput, newVoiceBtn);
       }
     });
     dialogNote.addEventListener("input", updateDetailPreview);
     dialogDetail.addEventListener("input", updateDetailPreview);
     taskDialog.addEventListener("click", (event) => {
-      if (event.target === taskDialog) closeTaskDialog();
+      if (event.target === taskDialog) closeTaskDialog(true);
+    });
+    newNoteDialog.addEventListener("click", (event) => {
+      if (event.target === newNoteDialog) closeNewNoteDialog(true);
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && taskDialog.classList.contains("open")) closeTaskDialog();
+      if (event.key !== "Escape") return;
+      if (taskDialog.classList.contains("open")) closeTaskDialog(true);
+      if (newNoteDialog.classList.contains("open")) closeNewNoteDialog(true);
+    });
+    window.addEventListener("popstate", () => {
+      if (taskDialog.classList.contains("open")) closeTaskDialog(false);
+      if (newNoteDialog.classList.contains("open")) closeNewNoteDialog(false);
     });
 
     render();

@@ -233,6 +233,36 @@
 
     .delete-task:hover { color: var(--red); background: #25131b; }
 
+    .priority-select {
+      position: absolute;
+      top: -1px;
+      right: 29px;
+      width: 24px;
+      min-height: 24px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: transparent;
+      background: var(--priority-color, var(--amber));
+      appearance: none;
+      outline: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .priority-select:focus {
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .2);
+    }
+
+    .priority-select option {
+      color: var(--ink);
+      background: var(--panel);
+    }
+
+    .task[data-priority="critica"] .priority-select { --priority-color: var(--red); }
+    .task[data-priority="alta"] .priority-select { --priority-color: #f97316; }
+    .task[data-priority="media"] .priority-select { --priority-color: var(--amber); }
+    .task[data-priority="baja"] .priority-select { --priority-color: var(--green); }
+
     .task-title {
       margin: 0;
       font-weight: 850;
@@ -572,7 +602,6 @@
     ];
     const priorityLabels = { critica: "Critica", alta: "Alta", media: "Media", baja: "Baja" };
     const validPriorities = Object.keys(priorityLabels);
-    const stateLabels = Object.fromEntries(columns.map((column) => [column.id, column.title]));
 
     let tasks = loadTasks();
     let filter = "open";
@@ -696,12 +725,12 @@
               ${task.note ? `<p class="task-note">${escapeHtml(task.note)}</p>` : ""}
               ${summary ? `<p class="task-summary">${escapeHtml(summary)}</p>` : ""}
               <div class="meta">
-                <span class="pill">${priorityLabels[task.priority] || "Media"}</span>
-                <span class="pill">${stateLabels[task.status] || "Ahora"}</span>
                 ${normalizeTags(task.tags).map((tag) => `<span class="pill">#${escapeHtml(tag)}</span>`).join("")}
-                ${task.detail ? `<span class="pill">Detalle</span>` : ""}
               </div>
             </div>
+            <select class="priority-select" data-action="priority" title="Importancia" aria-label="Importancia">
+              ${validPriorities.map((priority) => `<option value="${priority}" ${task.priority === priority ? "selected" : ""}>${priorityLabels[priority]}</option>`).join("")}
+            </select>
             <button class="button danger icon-button delete-task" type="button" data-action="delete" title="Eliminar">×</button>
           </div>
         </article>
@@ -964,6 +993,7 @@
     }
 
     board.addEventListener("click", (event) => {
+      if (event.target.closest(".priority-select")) return;
       const button = event.target.closest("button");
       const card = event.target.closest(".task");
       const task = card ? getTask(card.dataset.id) : null;
@@ -977,6 +1007,17 @@
         return;
       }
       openTask(task);
+    });
+
+    board.addEventListener("change", (event) => {
+      if (!event.target.matches(".priority-select")) return;
+      const card = event.target.closest(".task");
+      const task = card ? getTask(card.dataset.id) : null;
+      if (!task) return;
+      event.stopPropagation();
+      task.priority = validPriorities.includes(event.target.value) ? event.target.value : "media";
+      saveTasks();
+      render();
     });
 
     form.addEventListener("submit", addTask);

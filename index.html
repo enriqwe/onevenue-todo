@@ -941,6 +941,26 @@
       render();
     }
 
+    function normalizeTranscriptSegment(value) {
+      return String(value || "").replace(/\s+/g, " ").trim();
+    }
+
+    function mergeTranscriptSegments(segments) {
+      const words = [];
+      segments.map(normalizeTranscriptSegment).filter(Boolean).forEach((segment) => {
+        const nextWords = segment.split(" ");
+        let overlap = Math.min(words.length, nextWords.length);
+        while (overlap > 0) {
+          const previousSlice = words.slice(words.length - overlap).join(" ").toLowerCase();
+          const nextSlice = nextWords.slice(0, overlap).join(" ").toLowerCase();
+          if (previousSlice === nextSlice) break;
+          overlap -= 1;
+        }
+        words.push(...nextWords.slice(overlap));
+      });
+      return words.join(" ");
+    }
+
     function startVoice(target, button) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -960,18 +980,12 @@
         updateDetailPreview();
       }
       recognition.onresult = (event) => {
-        let finalTranscript = "";
-        let interim = "";
+        const segments = [];
         for (let index = 0; index < event.results.length; index += 1) {
-          const transcript = event.results[index][0].transcript.trim();
-          if (!transcript) continue;
-          if (event.results[index].isFinal) {
-            finalTranscript = [finalTranscript, transcript].filter(Boolean).join(" ");
-          } else {
-            interim = [interim, transcript].filter(Boolean).join(" ");
-          }
+          const transcript = normalizeTranscriptSegment(event.results[index][0].transcript);
+          if (transcript) segments.push(transcript);
         }
-        const dictated = `${finalTranscript} ${interim}`.trim();
+        const dictated = mergeTranscriptSegments(segments);
         target.value = [voiceBaseDetail, dictated].filter(Boolean).join(voiceBaseDetail && dictated ? "\n" : "");
         if (target === dialogDetail) updateDetailPreview();
       };

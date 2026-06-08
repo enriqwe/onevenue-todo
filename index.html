@@ -304,6 +304,66 @@
       font-weight: 750;
     }
 
+    .tag-field {
+      position: relative;
+      display: grid;
+      gap: 7px;
+    }
+
+    .tag-preview,
+    .tag-suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-chip {
+      border: 1px solid var(--line);
+      background: var(--panel-3);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .tag-chip.new {
+      border-color: rgba(251, 191, 36, .55);
+      background: rgba(251, 191, 36, .13);
+      color: #fde68a;
+    }
+
+    .tag-suggestions {
+      min-height: 28px;
+    }
+
+    .tag-suggestion {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--ink);
+      border-radius: 999px;
+      min-height: 28px;
+      padding: 5px 9px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .tag-suggestion:hover,
+    .tag-suggestion:focus {
+      border-color: var(--blue);
+      outline: none;
+    }
+
+    .tag-empty {
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+    }
+
     .empty {
       border: 1px dashed #334155;
       border-radius: 8px;
@@ -514,7 +574,11 @@
           </div>
           <div class="field">
             <label for="tags">Tags</label>
-            <input id="tags" type="text" placeholder="KPIs, alertas, ETL">
+            <div class="tag-field">
+              <input id="tags" type="text" placeholder="KPIs, alertas, ETL" autocomplete="off">
+              <div class="tag-preview" id="tagsPreview"></div>
+              <div class="tag-suggestions" id="tagsSuggestions"></div>
+            </div>
           </div>
           <div class="field">
             <div class="detail-toolbar">
@@ -569,7 +633,11 @@
         </div>
         <div class="field">
           <label for="dialogTags">Tags</label>
-          <input id="dialogTags" type="text" placeholder="KPIs, ventas, producto">
+          <div class="tag-field">
+            <input id="dialogTags" type="text" placeholder="KPIs, ventas, producto" autocomplete="off">
+            <div class="tag-preview" id="dialogTagsPreview"></div>
+            <div class="tag-suggestions" id="dialogTagsSuggestions"></div>
+          </div>
         </div>
         <div class="field">
           <div class="detail-toolbar">
@@ -622,6 +690,8 @@
     const titleInput = document.querySelector("#title");
     const noteInput = document.querySelector("#note");
     const tagsInput = document.querySelector("#tags");
+    const tagsPreview = document.querySelector("#tagsPreview");
+    const tagsSuggestions = document.querySelector("#tagsSuggestions");
     const newDetailInput = document.querySelector("#newDetail");
     const newVoiceBtn = document.querySelector("#newVoiceBtn");
     const priorityInput = document.querySelector("#priority");
@@ -632,6 +702,8 @@
     const dialogStatus = document.querySelector("#dialogStatus");
     const dialogNote = document.querySelector("#dialogNote");
     const dialogTags = document.querySelector("#dialogTags");
+    const dialogTagsPreview = document.querySelector("#dialogTagsPreview");
+    const dialogTagsSuggestions = document.querySelector("#dialogTagsSuggestions");
     const dialogDetail = document.querySelector("#dialogDetail");
     const detailPreview = document.querySelector("#detailPreview");
     const togglePreviewBtn = document.querySelector("#togglePreviewBtn");
@@ -712,6 +784,8 @@
           </article>
         `;
       }).join("");
+      updateTagAssist(tagsInput);
+      updateTagAssist(dialogTags);
     }
 
     function taskTemplate(task) {
@@ -755,7 +829,7 @@
     }
 
     function normalizeTags(value) {
-      const source = Array.isArray(value) ? value : String(value || "").split(",");
+      const source = Array.isArray(value) ? value : String(value || "").split(/[,;\n]/);
       const seen = new Set();
       return source
         .map((tag) => String(tag || "").trim())
@@ -769,7 +843,63 @@
     }
 
     function tagsText(value) {
-      return normalizeTags(value).join(" ");
+      return normalizeTags(value).join(", ");
+    }
+
+    function knownTags() {
+      const byKey = new Map();
+      tasks.forEach((task) => {
+        normalizeTags(task.tags).forEach((tag) => {
+          const key = tag.toLowerCase();
+          if (!byKey.has(key)) byKey.set(key, tag);
+        });
+      });
+      return [...byKey.values()].sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+    }
+
+    function currentTagToken(input) {
+      const beforeCursor = input.value.slice(0, input.selectionStart || input.value.length);
+      const parts = beforeCursor.split(",");
+      return parts[parts.length - 1].trim();
+    }
+
+    function applyTagSuggestion(input, tag) {
+      const cursor = input.selectionStart || input.value.length;
+      const tokenIndex = input.value.slice(0, cursor).split(",").length - 1;
+      const parts = input.value.split(",");
+      parts[tokenIndex] = tag;
+      input.value = `${parts.map((part) => part.trim()).filter(Boolean).join(", ")}, `;
+      input.focus();
+      input.selectionStart = input.value.length;
+      input.selectionEnd = input.value.length;
+      updateTagAssist(input);
+    }
+
+    function tagAssistElements(input) {
+      if (input === dialogTags) {
+        return { preview: dialogTagsPreview, suggestions: dialogTagsSuggestions };
+      }
+      return { preview: tagsPreview, suggestions: tagsSuggestions };
+    }
+
+    function updateTagAssist(input) {
+      const { preview, suggestions } = tagAssistElements(input);
+      const tags = normalizeTags(input.value);
+      const existing = knownTags();
+      const existingKeys = new Set(existing.map((tag) => tag.toLowerCase()));
+      preview.innerHTML = tags.map((tag) => {
+        const isNew = !existingKeys.has(tag.toLowerCase());
+        return `<span class="tag-chip ${isNew ? "new" : ""}">${isNew ? "Nueva: " : "#"}${escapeHtml(tag)}</span>`;
+      }).join("");
+
+      const token = currentTagToken(input).toLowerCase();
+      const selectedKeys = new Set(tags.map((tag) => tag.toLowerCase()));
+      const matches = token
+        ? existing.filter((tag) => tag.toLowerCase().startsWith(token) && !selectedKeys.has(tag.toLowerCase())).slice(0, 6)
+        : [];
+      suggestions.innerHTML = matches.length
+        ? matches.map((tag) => `<button class="tag-suggestion" type="button" data-tag="${escapeHtml(tag)}">#${escapeHtml(tag)}</button>`).join("")
+        : `<span class="tag-empty">${token && !existingKeys.has(token) ? `Se creara "${escapeHtml(currentTagToken(input))}" al guardar` : ""}</span>`;
     }
 
     function parseSearch(value) {
@@ -831,6 +961,7 @@
       form.reset();
       priorityInput.value = "media";
       statusInput.value = "ahora";
+      updateTagAssist(tagsInput);
       saveTasks();
       closeNewNoteDialog(true);
       render();
@@ -853,6 +984,7 @@
       taskDialog.classList.add("open");
       document.body.style.overflow = "hidden";
       history.pushState({ dialog: "task", id: task.id }, "", `#nota-${encodeURIComponent(task.id)}`);
+      updateTagAssist(dialogTags);
       updateDetailPreview();
       dialogTitle.focus();
     }
@@ -875,6 +1007,7 @@
       newNoteDialog.classList.add("open");
       document.body.style.overflow = "hidden";
       history.pushState({ dialog: "new" }, "", "#nueva-nota");
+      updateTagAssist(tagsInput);
       titleInput.focus();
     }
 
@@ -1038,6 +1171,19 @@
     newNoteBtn.addEventListener("click", openNewNoteDialog);
     document.querySelector("#closeNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
     document.querySelector("#cancelNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
+    [tagsInput, dialogTags].forEach((input) => {
+      input.addEventListener("input", () => updateTagAssist(input));
+      input.addEventListener("focus", () => updateTagAssist(input));
+      input.addEventListener("keyup", () => updateTagAssist(input));
+      input.addEventListener("click", () => updateTagAssist(input));
+    });
+    [tagsSuggestions, dialogTagsSuggestions].forEach((container) => {
+      container.addEventListener("click", (event) => {
+        const button = event.target.closest(".tag-suggestion");
+        if (!button) return;
+        applyTagSuggestion(container === dialogTagsSuggestions ? dialogTags : tagsInput, button.dataset.tag);
+      });
+    });
     search.addEventListener("input", () => {
       query = search.value.trim().toLowerCase();
       render();

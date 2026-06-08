@@ -469,6 +469,12 @@
       flex-wrap: wrap;
     }
 
+    .summary-editor {
+      min-height: 96px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
     .detail-preview {
       min-height: 92px;
       border: 1px solid var(--line);
@@ -569,8 +575,14 @@
             </div>
           </div>
           <div class="field">
-            <label for="note">Resumen</label>
-            <input id="note" type="text">
+            <div class="detail-toolbar">
+              <label for="note">Resumen</label>
+              <div class="toolbar-actions">
+                <button class="button" id="toggleNewSummaryBtn" type="button">Anadir resumen</button>
+                <button class="button" id="generateNewSummaryBtn" type="button">Generar</button>
+              </div>
+            </div>
+            <textarea class="summary-editor" id="note" hidden></textarea>
           </div>
           <div class="field">
             <label for="tags">Tags</label>
@@ -628,8 +640,14 @@
           </div>
         </div>
         <div class="field">
-          <label for="dialogNote">Resumen manual</label>
-          <input id="dialogNote" type="text">
+          <div class="detail-toolbar">
+            <label for="dialogNote">Resumen</label>
+            <div class="toolbar-actions">
+              <button class="button" id="toggleDialogSummaryBtn" type="button">Anadir resumen</button>
+              <button class="button" id="generateDialogSummaryBtn" type="button">Generar</button>
+            </div>
+          </div>
+          <textarea class="summary-editor" id="dialogNote" hidden></textarea>
         </div>
         <div class="field">
           <label for="dialogTags">Tags</label>
@@ -689,6 +707,8 @@
     const search = document.querySelector("#search");
     const titleInput = document.querySelector("#title");
     const noteInput = document.querySelector("#note");
+    const toggleNewSummaryBtn = document.querySelector("#toggleNewSummaryBtn");
+    const generateNewSummaryBtn = document.querySelector("#generateNewSummaryBtn");
     const tagsInput = document.querySelector("#tags");
     const tagsPreview = document.querySelector("#tagsPreview");
     const tagsSuggestions = document.querySelector("#tagsSuggestions");
@@ -701,6 +721,8 @@
     const dialogPriority = document.querySelector("#dialogPriority");
     const dialogStatus = document.querySelector("#dialogStatus");
     const dialogNote = document.querySelector("#dialogNote");
+    const toggleDialogSummaryBtn = document.querySelector("#toggleDialogSummaryBtn");
+    const generateDialogSummaryBtn = document.querySelector("#generateDialogSummaryBtn");
     const dialogTags = document.querySelector("#dialogTags");
     const dialogTagsPreview = document.querySelector("#dialogTagsPreview");
     const dialogTagsSuggestions = document.querySelector("#dialogTagsSuggestions");
@@ -816,6 +838,45 @@
       if (!text) return "";
       if (text.length <= 120) return text;
       return `${text.slice(0, 117).trim()}...`;
+    }
+
+    function generatedSummaryFromDetail(value) {
+      const text = String(value || "").replace(/\s+/g, " ").trim();
+      if (!text) return "";
+      const sentences = text.match(/[^.!?]+[.!?]?/g) || [text];
+      let summary = "";
+      for (const sentence of sentences) {
+        const next = [summary, sentence.trim()].filter(Boolean).join(" ");
+        if (next.length > 220) break;
+        summary = next;
+        if (summary.length >= 120) break;
+      }
+      if (!summary) summary = text.slice(0, 220).trim();
+      if (summary.length < text.length && !/[.!?]$/.test(summary)) summary = `${summary.replace(/[,.:\s]+$/, "")}...`;
+      return summary;
+    }
+
+    function setSummaryVisibility(input, button, visible) {
+      const show = Boolean(visible || input.value.trim());
+      input.hidden = !show;
+      button.textContent = show ? "Ocultar resumen" : "Anadir resumen";
+    }
+
+    function toggleSummary(input, button) {
+      setSummaryVisibility(input, button, input.hidden);
+      if (!input.hidden) input.focus();
+    }
+
+    function generateSummary(input, detailInput, button) {
+      const summary = generatedSummaryFromDetail(detailInput.value);
+      if (!summary) {
+        alert("Necesito detalle para generar el resumen.");
+        return;
+      }
+      input.value = summary;
+      setSummaryVisibility(input, button, true);
+      input.focus();
+      if (input === dialogNote) updateDetailPreview();
     }
 
     function escapeHtml(value) {
@@ -961,6 +1022,7 @@
       form.reset();
       priorityInput.value = "media";
       statusInput.value = "ahora";
+      setSummaryVisibility(noteInput, toggleNewSummaryBtn, false);
       updateTagAssist(tagsInput);
       saveTasks();
       closeNewNoteDialog(true);
@@ -981,6 +1043,7 @@
       dialogNote.value = task.note || "";
       dialogTags.value = tagsText(task.tags);
       dialogDetail.value = task.detail || "";
+      setSummaryVisibility(dialogNote, toggleDialogSummaryBtn, Boolean(dialogNote.value.trim()));
       taskDialog.classList.add("open");
       document.body.style.overflow = "hidden";
       history.pushState({ dialog: "task", id: task.id }, "", `#nota-${encodeURIComponent(task.id)}`);
@@ -1007,6 +1070,7 @@
       newNoteDialog.classList.add("open");
       document.body.style.overflow = "hidden";
       history.pushState({ dialog: "new" }, "", "#nueva-nota");
+      setSummaryVisibility(noteInput, toggleNewSummaryBtn, Boolean(noteInput.value.trim()));
       updateTagAssist(tagsInput);
       titleInput.focus();
     }
@@ -1171,6 +1235,8 @@
     newNoteBtn.addEventListener("click", openNewNoteDialog);
     document.querySelector("#closeNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
     document.querySelector("#cancelNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
+    toggleNewSummaryBtn.addEventListener("click", () => toggleSummary(noteInput, toggleNewSummaryBtn));
+    generateNewSummaryBtn.addEventListener("click", () => generateSummary(noteInput, newDetailInput, toggleNewSummaryBtn));
     [tagsInput, dialogTags].forEach((input) => {
       input.addEventListener("input", () => updateTagAssist(input));
       input.addEventListener("focus", () => updateTagAssist(input));
@@ -1208,6 +1274,8 @@
     document.querySelector("#cancelDialogBtn").addEventListener("click", () => closeTaskDialog(true));
     document.querySelector("#saveDialogBtn").addEventListener("click", saveDialogTask);
     document.querySelector("#deleteDialogBtn").addEventListener("click", deleteDialogTask);
+    toggleDialogSummaryBtn.addEventListener("click", () => toggleSummary(dialogNote, toggleDialogSummaryBtn));
+    generateDialogSummaryBtn.addEventListener("click", () => generateSummary(dialogNote, dialogDetail, toggleDialogSummaryBtn));
     togglePreviewBtn.addEventListener("click", () => {
       detailMode = detailMode === "summary" ? "detail" : "summary";
       updateDetailPreview();

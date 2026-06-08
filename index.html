@@ -215,22 +215,53 @@
     .task-list { display: grid; gap: 9px; min-height: 240px; }
 
     .task {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-left: 5px solid var(--blue);
+      background: var(--status-bg, var(--panel));
+      border: 1px solid var(--status-border, var(--line));
+      border-left: 5px solid var(--status-accent, var(--blue));
       border-radius: 8px;
       padding: 11px 10px;
       box-shadow: 0 8px 24px rgba(0,0,0,.16);
       cursor: pointer;
     }
 
-    .task:hover { border-color: #3b4a60; background: #151f2f; }
+    .task:hover {
+      border-color: var(--status-hover, #3b4a60);
+      background: var(--status-hover-bg, #151f2f);
+    }
 
-    .task[data-priority="critica"] { border-left-color: var(--red); }
-    .task[data-priority="alta"] { border-left-color: #f97316; }
-    .task[data-priority="media"] { border-left-color: var(--amber); }
-    .task[data-priority="baja"] { border-left-color: var(--green); }
-    .task.done { opacity: .7; }
+    .task[data-status="ahora"] {
+      --status-accent: #60a5fa;
+      --status-border: #1d4ed8;
+      --status-bg: #101b2e;
+      --status-hover: #3b82f6;
+      --status-hover-bg: #14233a;
+    }
+
+    .task[data-status="siguiente"] {
+      --status-accent: #fbbf24;
+      --status-border: #92400e;
+      --status-bg: #201a0d;
+      --status-hover: #d97706;
+      --status-hover-bg: #2a210f;
+    }
+
+    .task[data-status="espera"] {
+      --status-accent: #a78bfa;
+      --status-border: #6d28d9;
+      --status-bg: #1b1530;
+      --status-hover: #8b5cf6;
+      --status-hover-bg: #231a3d;
+    }
+
+    .task[data-status="hecho"] {
+      --status-accent: #34d399;
+      --status-border: #166534;
+      --status-bg: #0d1f19;
+      --status-hover: #16a34a;
+      --status-hover-bg: #10271f;
+    }
+
+    .task.done { opacity: .76; }
     .task.done .task-title { text-decoration: line-through; color: var(--muted); }
 
     .task-main {
@@ -888,7 +919,7 @@
       const canMoveUp = statusIndex > 0;
       const canMoveDown = statusIndex >= 0 && statusIndex < statuses.length - 1;
       return `
-        <article class="task ${done ? "done" : ""}" data-id="${task.id}" data-priority="${task.priority}">
+        <article class="task ${done ? "done" : ""}" data-id="${task.id}" data-priority="${task.priority}" data-status="${task.status}">
           <div class="task-main">
             <div>
               <p class="task-title">${escapeHtml(task.title)}</p>

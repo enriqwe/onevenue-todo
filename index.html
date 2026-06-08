@@ -219,7 +219,7 @@
       border: 1px solid var(--status-border, var(--line));
       border-left: 5px solid var(--status-accent, var(--blue));
       border-radius: 8px;
-      padding: 11px 10px;
+      padding: 11px 10px 36px;
       box-shadow: 0 8px 24px rgba(0,0,0,.16);
       cursor: pointer;
     }
@@ -266,7 +266,8 @@
 
     .task-main {
       position: relative;
-      padding-right: 64px;
+      min-height: 62px;
+      padding-right: 36px;
     }
 
     .delete-task {
@@ -287,8 +288,8 @@
 
     .move-actions {
       position: absolute;
-      top: -2px;
-      right: 29px;
+      right: -1px;
+      bottom: -27px;
       display: grid;
       grid-auto-flow: column;
       gap: 3px;

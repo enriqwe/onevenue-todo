@@ -726,6 +726,7 @@
   <script>
     const STORAGE_KEY = "onevenue.todo.v1";
     const API_URL = "/api/onevenue-todo/tasks";
+    const SUMMARY_API_URL = "/api/onevenue-todo/summary";
     const columns = [
       { id: "ahora", title: "Ahora" },
       { id: "siguiente", title: "Siguiente" },
@@ -946,16 +947,47 @@
       if (!input.hidden) input.focus();
     }
 
-    function generateSummary(input, detailInput, button) {
-      const summary = generatedSummaryFromDetail(detailInput.value);
-      if (!summary) {
+    async function llmSummary(detail, title = "") {
+      const response = await fetch(SUMMARY_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ title, detail })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.summary) {
+        throw new Error(data.error || "No se pudo generar el resumen.");
+      }
+      return String(data.summary || "").trim();
+    }
+
+    async function generateSummary(input, detailInput, visibilityButton, actionButton, titleInputForSummary) {
+      const detail = detailInput.value.trim();
+      if (!detail) {
         alert("Necesito detalle para generar el resumen.");
         return;
       }
-      input.value = summary;
-      setSummaryVisibility(input, button, true);
-      input.focus();
-      if (input === dialogNote) updateDetailPreview();
+      const previousText = actionButton.textContent;
+      actionButton.disabled = true;
+      actionButton.textContent = "Generando...";
+      try {
+        input.value = await llmSummary(detail, titleInputForSummary ? titleInputForSummary.value : "");
+        setSummaryVisibility(input, visibilityButton, true);
+        input.focus();
+        if (input === dialogNote) updateDetailPreview();
+      } catch (error) {
+        const fallback = generatedSummaryFromDetail(detail);
+        if (fallback && confirm(`${error.message}\n\nUsar resumen local de respaldo?`)) {
+          input.value = fallback;
+          setSummaryVisibility(input, visibilityButton, true);
+          input.focus();
+          if (input === dialogNote) updateDetailPreview();
+        } else {
+          alert(error.message);
+        }
+      } finally {
+        actionButton.disabled = false;
+        actionButton.textContent = previousText;
+      }
     }
 
     function escapeHtml(value) {
@@ -1336,7 +1368,7 @@
     document.querySelector("#closeNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
     document.querySelector("#cancelNewNoteBtn").addEventListener("click", () => closeNewNoteDialog(true));
     toggleNewSummaryBtn.addEventListener("click", () => toggleSummary(noteInput, toggleNewSummaryBtn));
-    generateNewSummaryBtn.addEventListener("click", () => generateSummary(noteInput, newDetailInput, toggleNewSummaryBtn));
+    generateNewSummaryBtn.addEventListener("click", () => generateSummary(noteInput, newDetailInput, toggleNewSummaryBtn, generateNewSummaryBtn, titleInput));
     [tagsInput, dialogTags].forEach((input) => {
       input.addEventListener("input", () => updateTagAssist(input));
       input.addEventListener("focus", () => updateTagAssist(input));
@@ -1375,7 +1407,7 @@
     document.querySelector("#saveDialogBtn").addEventListener("click", saveDialogTask);
     document.querySelector("#deleteDialogBtn").addEventListener("click", deleteDialogTask);
     toggleDialogSummaryBtn.addEventListener("click", () => toggleSummary(dialogNote, toggleDialogSummaryBtn));
-    generateDialogSummaryBtn.addEventListener("click", () => generateSummary(dialogNote, dialogDetail, toggleDialogSummaryBtn));
+    generateDialogSummaryBtn.addEventListener("click", () => generateSummary(dialogNote, dialogDetail, toggleDialogSummaryBtn, generateDialogSummaryBtn, dialogTitle));
     togglePreviewBtn.addEventListener("click", () => {
       detailMode = detailMode === "summary" ? "detail" : "summary";
       updateDetailPreview();

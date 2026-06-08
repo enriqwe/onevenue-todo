@@ -171,10 +171,31 @@
       padding: 4px 2px;
     }
 
+    .column-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .column h2 {
       margin: 0;
       font-size: 16px;
       letter-spacing: 0;
+    }
+
+    .collapse-column {
+      min-height: 28px;
+      min-width: 28px;
+      padding: 0;
+    }
+
+    .column.collapsed {
+      min-height: 0;
+    }
+
+    .column.collapsed .task-list {
+      display: none;
     }
 
     .count {
@@ -214,7 +235,7 @@
 
     .task-main {
       position: relative;
-      padding-right: 34px;
+      padding-right: 64px;
     }
 
     .delete-task {
@@ -233,10 +254,36 @@
 
     .delete-task:hover { color: var(--red); background: #25131b; }
 
+    .move-actions {
+      position: absolute;
+      top: -2px;
+      right: 29px;
+      display: grid;
+      grid-auto-flow: column;
+      gap: 3px;
+    }
+
+    .move-task {
+      width: 24px;
+      min-height: 24px;
+      padding: 0;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--muted);
+      box-shadow: none;
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    .move-task:hover {
+      color: var(--ink);
+      border-color: var(--blue);
+    }
+
     .priority-select {
       position: absolute;
-      top: -1px;
-      right: 29px;
+      top: 26px;
+      right: -1px;
       width: 24px;
       min-height: 24px;
       border: 1px solid var(--line);
@@ -698,6 +745,7 @@
     let recognition = null;
     let recognizing = false;
     let voiceBaseDetail = "";
+    const collapsedColumns = new Set(["siguiente", "espera"]);
 
     const board = document.querySelector("#board");
     const form = document.querySelector("#taskForm");
@@ -793,10 +841,15 @@
       });
       board.innerHTML = visibleColumns.map((column) => {
         const items = filteredTasks(column.id);
+        const collapsible = ["siguiente", "espera"].includes(column.id);
+        const collapsed = collapsible && collapsedColumns.has(column.id);
         return `
-          <article class="column" data-column="${column.id}">
+          <article class="column ${collapsed ? "collapsed" : ""}" data-column="${column.id}">
             <div class="column-head">
-              <h2>${column.title}</h2>
+              <div class="column-title">
+                ${collapsible ? `<button class="button icon-button collapse-column" type="button" data-action="toggle-column" title="${collapsed ? "Expandir" : "Colapsar"}">${collapsed ? "▸" : "▾"}</button>` : ""}
+                <h2>${column.title}</h2>
+              </div>
               <span class="count">${items.length}</span>
             </div>
             <div class="task-list">
@@ -809,9 +862,30 @@
       updateTagAssist(dialogTags);
     }
 
+    function workflowStatuses() {
+      return ["ahora", "siguiente", "espera"];
+    }
+
+    function moveStatus(task, direction) {
+      const statuses = workflowStatuses();
+      const index = statuses.indexOf(task.status);
+      if (index < 0) return;
+      const next = statuses[index + direction];
+      if (!next) return;
+      task.status = next;
+      task.rank = nextRank(next);
+      if (next !== "ahora") collapsedColumns.delete(next);
+      saveTasks();
+      render();
+    }
+
     function taskTemplate(task) {
       const done = task.status === "hecho";
       const summary = task.note ? "" : taskSummary(task);
+      const statuses = workflowStatuses();
+      const statusIndex = statuses.indexOf(task.status);
+      const canMoveUp = statusIndex > 0;
+      const canMoveDown = statusIndex >= 0 && statusIndex < statuses.length - 1;
       return `
         <article class="task ${done ? "done" : ""}" data-id="${task.id}" data-priority="${task.priority}">
           <div class="task-main">
@@ -823,6 +897,12 @@
                 ${normalizeTags(task.tags).map((tag) => `<span class="pill">#${escapeHtml(tag)}</span>`).join("")}
               </div>
             </div>
+            ${statusIndex >= 0 ? `
+              <div class="move-actions" aria-label="Cambiar seccion">
+                ${canMoveUp ? `<button class="button move-task" type="button" data-action="move-up" title="Subir seccion">↑</button>` : ""}
+                ${canMoveDown ? `<button class="button move-task" type="button" data-action="move-down" title="Bajar seccion">↓</button>` : ""}
+              </div>
+            ` : ""}
             <select class="priority-select" data-action="priority" title="Importancia" aria-label="Importancia">
               ${validPriorities.map((priority) => `<option value="${priority}" ${task.priority === priority ? "selected" : ""}>${priorityLabels[priority]}</option>`).join("")}
             </select>
@@ -1205,9 +1285,30 @@
     board.addEventListener("click", (event) => {
       if (event.target.closest(".priority-select")) return;
       const button = event.target.closest("button");
+      if (button && button.dataset.action === "toggle-column") {
+        const column = button.closest(".column");
+        const columnId = column ? column.dataset.column : "";
+        if (collapsedColumns.has(columnId)) {
+          collapsedColumns.delete(columnId);
+        } else {
+          collapsedColumns.add(columnId);
+        }
+        render();
+        return;
+      }
       const card = event.target.closest(".task");
       const task = card ? getTask(card.dataset.id) : null;
       if (!task) return;
+      if (button && button.dataset.action === "move-up") {
+        event.stopPropagation();
+        moveStatus(task, -1);
+        return;
+      }
+      if (button && button.dataset.action === "move-down") {
+        event.stopPropagation();
+        moveStatus(task, 1);
+        return;
+      }
       if (button && button.dataset.action === "delete") {
         event.stopPropagation();
         if (!confirm("Eliminar esta nota?")) return;

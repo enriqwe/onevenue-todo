@@ -212,7 +212,13 @@
       font-weight: 850;
     }
 
-    .task-list { display: grid; gap: 9px; min-height: 240px; }
+    .task-list {
+      display: grid;
+      gap: 9px;
+      min-height: 0;
+      align-content: start;
+      align-items: start;
+    }
 
     .task {
       background: var(--status-bg, var(--panel));
@@ -267,7 +273,6 @@
     .task-main {
       position: relative;
       padding-right: 36px;
-      padding-bottom: 18px;
     }
 
     .delete-task {
@@ -289,7 +294,7 @@
     .move-actions {
       position: absolute;
       right: -1px;
-      bottom: -8px;
+      bottom: 0;
       display: grid;
       grid-auto-flow: column;
       gap: 3px;
@@ -371,6 +376,7 @@
       flex-wrap: wrap;
       gap: 6px;
       margin-top: 10px;
+      padding-right: 56px;
       color: var(--muted);
       font-size: 12px;
     }
@@ -907,7 +913,6 @@
       if (!next) return;
       task.status = next;
       task.rank = nextRank(next);
-      if (next !== "ahora") collapsedColumns.delete(next);
       saveTasks();
       render();
     }
